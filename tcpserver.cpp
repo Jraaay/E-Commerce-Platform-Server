@@ -15,7 +15,82 @@ TcpServer::TcpServer(QWidget *parent)
         return;
     }
     connect(tcpServer,&QTcpServer::newConnection,this,&TcpServer::server_New_Connect);
+    ifstream infile;
+    string sellerJson = "";
+    try // 读取消费者、商家和最大uid文件
+    {
+        infile.open("sellerFile.json");
+        infile >> sellerJson;
+        infile.close();
+    }
+    catch (exception &e) // 错误读取处理
+    {
+        qDebug() << e.what() << endl;
+    }
+    if (sellerJson == "")
+    {
+        QString tmp = "";
+        QJsonObject object;
+        object.insert("data", tmp);
+        QJsonDocument document;
+        document.setObject(object);
+        QByteArray array = document.toJson(QJsonDocument::Compact);
+        ofstream outFile;
+        outFile.open("sellerFile.json");
+        outFile << array.toStdString();
+        outFile.close();
+    }
+    string consumerJson = "";
+    try
+    {
+        infile.open("consumerFile.json");
+        infile >> consumerJson;
+        infile.close();
+    }
+    catch (exception &e) // 错误读取处理
+    {
+        qDebug() << e.what() << endl;
+    }
 
+    if (consumerJson == "")
+    {
+        QString tmp = "";
+        QJsonObject object;
+        object.insert("data", tmp);
+        QJsonDocument document;
+        document.setObject(object);
+        QByteArray array = document.toJson(QJsonDocument::Compact);
+        ofstream outFile;
+        outFile.open("consumerFile.json");
+        outFile << array.toStdString();
+        outFile.close();
+    }
+    string uidMaxJson = "";
+    try
+    {
+        infile.open("uidMaxFile.json");
+        infile >> uidMaxJson;
+        infile.close();
+    }
+    catch (exception &e) // 错误读取处理
+    {
+        qDebug() << e.what() << endl;
+    }
+
+    if (uidMaxJson == "")
+    {
+        uidMaxJson = "";
+        const int tmp = 0;
+        QJsonObject object;
+        object.insert("uid", tmp);
+        QJsonDocument document;
+        document.setObject(object);
+        QByteArray array = document.toJson(QJsonDocument::Compact);
+        ofstream outFile;
+        outFile.open("uidMaxFile.json");
+        outFile << array.toStdString();
+        outFile.close();
+    }
 }
 
 TcpServer::~TcpServer()

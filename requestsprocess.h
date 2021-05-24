@@ -14,12 +14,14 @@
 #define SQLITE_getOrder 10
 #define SQLITE_getOrderList 11
 #define USER_createUser 12
-#define USER_modifyUserInfo 13
+#define USER_changeUserName 13
 #define USER_loginCheck 14
 #define USER_getUser 15
 #define pay 16
 #define SQLITE_getDiscount 17
 #define SQLITE_buyOneThing 18
+#define USER_recharge 19
+#define USER_changePassword 20
 
 #include <QObject>
 #include <QJsonObject>
@@ -27,6 +29,8 @@
 #include "sqlite.h"
 #include "productitem.h"
 #include <QJsonArray>
+#include "usermanager.h"
+#include "user.h"
 
 using namespace std;
 

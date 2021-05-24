@@ -15,6 +15,11 @@ Sqlite::Sqlite()
         // 设置数据库文件的名字
         db.setDatabaseName("E-Commerce-Platform.db");
     }
+    QString tableName = "productItem";
+    if (!isTableExist(tableName))
+    {
+        createTable();
+    }
 }
 
 /* 打开数据库 */
@@ -246,6 +251,7 @@ void Sqlite::deleteItemFromCart(int productId, int userId)
 /* 列出购物车 */
 void Sqlite::queryCart(int userId, vector<productItem *> &productList, vector<int> &numberList, vector<bool> &checkedList)
 {
+    vector<sellerClass> sellerList = userManager::getSellerList();
     QSqlQuery sqlQuery;
     sqlQuery.prepare("SELECT * FROM `cart` WHERE `userId`==:userId ");
     sqlQuery.bindValue(":userId", userId);
@@ -286,6 +292,15 @@ void Sqlite::queryCart(int userId, vector<productItem *> &productList, vector<in
                 tmp->mainPhoto = sqlQuery2.value(5).toInt();
                 tmp->type = sqlQuery2.value(6).toInt();
                 tmp->seller = sqlQuery2.value(8).toInt();
+                int numToShow;
+                for (int j = 0; j < (int)sellerList.size(); j++)
+                {
+                    if (sellerList[j].uid == tmp->seller)
+                    {
+                        numToShow = j;
+                    }
+                }
+                tmp->sellerName = sellerList[numToShow].name;
                 QSqlQuery sqlQueryPhoto;
                 sqlQueryPhoto.exec("SELECT * FROM `productPhoto` WHERE `productId` LIKE " + sqlQuery2.value(0).toString());
                 while (sqlQueryPhoto.next())
@@ -303,6 +318,7 @@ void Sqlite::queryCart(int userId, vector<productItem *> &productList, vector<in
 /* 查询全部数据 */
 vector<productItem *> Sqlite::queryTable(string LIKE, string SORT, int productId) const
 {
+    vector<sellerClass> sellerList = userManager::getSellerList();
     vector<productItem *> productList;
     QSqlQuery sqlQuery;
     string sqlCommand = "SELECT * FROM `productItem` WHERE `deleted`==false ";
@@ -349,6 +365,15 @@ vector<productItem *> Sqlite::queryTable(string LIKE, string SORT, int productId
             tmp->mainPhoto = sqlQuery.value(5).toInt();
             tmp->type = sqlQuery.value(6).toInt();
             tmp->seller = sqlQuery.value(8).toInt();
+            int numToShow;
+            for (int j = 0; j < (int)sellerList.size(); j++)
+            {
+                if (sellerList[j].uid == tmp->seller)
+                {
+                    numToShow = j;
+                }
+            }
+            tmp->sellerName = sellerList[numToShow].name;
             QSqlQuery sqlQueryPhoto;
             sqlQueryPhoto.exec("SELECT * FROM `productPhoto` WHERE `productId` LIKE " + sqlQuery.value(0).toString());
             while (sqlQueryPhoto.next())
@@ -524,7 +549,7 @@ int Sqlite::generateOrder(int userId)
         {
             for (int j = 0; j < i; j++)
             {
-                if (checkedList[i])
+                if (checkedList[i] && numberList[i] > 0)
                 {
                     productList[i]->remaining+=numberList[i];
 
@@ -532,9 +557,10 @@ int Sqlite::generateOrder(int userId)
 
                 }
             }
+            return -1;
             break;
         }
-        if (checkedList[i])
+        if (checkedList[i] && numberList[i] > 0)
         {
             priceSum += productList[i]->getPrice(discount) * numberList[i];
             orderList.push_back(*productList[i]);
@@ -545,6 +571,10 @@ int Sqlite::generateOrder(int userId)
             modifyData(*productList[i], 0);
 
         }
+    }
+    if (orderList.size() == 0)
+    {
+        return -2;
     }
     int orderId;
     QSqlQuery sqlQuery;
@@ -585,8 +615,9 @@ int Sqlite::generateOrder(int userId)
     return orderId;
 }
 
-void Sqlite::buyOne(int userId, int productId)
+int Sqlite::buyOne(int userId, int productId)
 {
+    int payStatus = -1;
     vector<productItem *> productList = queryTable("","",productId);
     vector<int> numberList;
     numberList.push_back(1);
@@ -603,6 +634,7 @@ void Sqlite::buyOne(int userId, int productId)
     {
         if (numberList[i] > productList[i]->remaining)
         {
+            payStatus = LACKOFPRODUCT;
             for (int j = 0; j < i; j++)
             {
                 if (checkedList[i])
@@ -614,6 +646,7 @@ void Sqlite::buyOne(int userId, int productId)
                 }
             }
             break;
+            return payStatus;
         }
         if (checkedList[i])
         {
@@ -663,11 +696,16 @@ void Sqlite::buyOne(int userId, int productId)
             qDebug() << "Order generated!";
         }
     }
-    payOrder(orderId);
+    if (payStatus == -1)
+    {
+        payStatus = payOrder(orderId);
+    }
+    return payStatus;
 }
 
 void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum)
 {
+    vector<sellerClass> sellerList = userManager::getSellerList();
     QSqlQuery sqlQuery;
     sqlQuery.prepare("SELECT * FROM `order` WHERE `id`==:orderId");
     sqlQuery.bindValue(":orderId", orderId);
@@ -718,6 +756,15 @@ void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, ve
                     tmp->mainPhoto = sqlQuery3.value(5).toInt();
                     tmp->type = sqlQuery3.value(6).toInt();
                     tmp->seller = sqlQuery3.value(8).toInt();
+                    int numToShow;
+                    for (int j = 0; j < (int)sellerList.size(); j++)
+                    {
+                        if (sellerList[j].uid == tmp->seller)
+                        {
+                            numToShow = j;
+                        }
+                    }
+                    tmp->sellerName = sellerList[numToShow].name;
                     QSqlQuery sqlQueryPhoto;
                     sqlQueryPhoto.exec("SELECT * FROM `productPhoto` WHERE `productId` LIKE " + sqlQuery3.value(0).toString());
                     while (sqlQueryPhoto.next())
@@ -734,21 +781,131 @@ void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, ve
     }
 }
 
-void Sqlite::payOrder(int orderId)
+int Sqlite::payOrder(int orderId)
 {
-    QSqlQuery sqlQuery;
-    sqlQuery.prepare("UPDATE `order` SET "
-                     "`paied`=true "
-                     "WHERE `id`==:id;");
-    sqlQuery.bindValue(":id", orderId);
-    if (!sqlQuery.exec())
+    int payStatus = -1;
+    bool paid;
+    long long time;
+    int userId;
+    vector<productItem *> orderList;
+    vector<int> count;
+    vector<double> price;
+    double priceSum;
+    getOrder(orderId, paid, time, userId, orderList, count, price, priceSum);
+    sellerClass curUser;
+    userManager::getUser(userId, curUser);
+
+    if (curUser.balance >= priceSum)
     {
-        qDebug() << "Error: Fail to pay order. " << sqlQuery.lastError();
+        vector<sellerClass> sellerList = userManager::getSellerList();
+        for (int i = 0; i < (int)orderList.size(); i++)
+        {
+            int numToChange;
+            for (int j = 0; j < (int)sellerList.size(); j++)
+            {
+                if (sellerList[j].uid == orderList[i]->seller)
+                {
+                    numToChange = j;
+                }
+            }
+            sellerList[numToChange].balance += price[i] * count[i];
+        }
+        QJsonArray sellerJsonList;
+        for (int i = 0; i < (int)sellerList.size(); i++)
+        {
+            sellerJsonList.push_back(sellerList[i].getJson());
+        }
+        QJsonObject object;
+        object.insert("data", sellerJsonList);
+        QJsonDocument document;
+        document.setObject(object);
+        QByteArray byteArray = document.toJson(QJsonDocument::Compact);
+        ofstream outFile;
+        outFile.open("sellerFile.json");
+        outFile << byteArray.toStdString();
+        outFile.close();
+        if (curUser.getUserType() == SELLERTYPE)
+        {
+            vector<sellerClass> sellerList = userManager::getSellerList();
+            int numToChange;
+            for (int i = 0; i < (int)sellerList.size(); i++)
+            {
+                if (sellerList[i].uid == curUser.uid)
+                {
+                    numToChange = i;
+                }
+            }
+            sellerList[numToChange].balance -= priceSum;
+            QJsonArray sellerJsonList;
+            for (int i = 0; i < (int)sellerList.size(); i++)
+            {
+                sellerJsonList.push_back(sellerList[i].getJson());
+            }
+            QJsonObject object;
+            object.insert("data", sellerJsonList);
+            QJsonDocument document;
+            document.setObject(object);
+            QByteArray byteArray = document.toJson(QJsonDocument::Compact);
+            ofstream outFile;
+            outFile.open("sellerFile.json");
+            outFile << byteArray.toStdString();
+            outFile.close();
+
+            payStatus = 0;
+        }
+        else
+        {
+            vector<consumerClass> consumerList = userManager::getConsumerList();
+
+            int numToChange;
+            for (int i = 0; i < (int)consumerList.size(); i++)
+            {
+                if (consumerList[i].uid == curUser.uid)
+                {
+                    numToChange = i;
+                }
+            }
+            consumerList[numToChange].balance -= priceSum;
+            QJsonArray consumerJsonList;
+            for (int i = 0; i < (int)consumerList.size(); i++)
+            {
+                consumerJsonList.push_back(consumerList[i].getJson());
+            }
+            QJsonObject object;
+            object.insert("data", consumerJsonList);
+            QJsonDocument document;
+            document.setObject(object);
+            QByteArray byteArray = document.toJson(QJsonDocument::Compact);
+            ofstream outFile;
+            outFile.open("consumerFile.json");
+            outFile << byteArray.toStdString();
+            outFile.close();
+
+            payStatus = 0;
+        }
+
     }
     else
     {
-        qDebug() << "Order paied!";
+        payStatus = LACKOFBALANCE;
     }
+    if (payStatus == 0)
+    {
+        QSqlQuery sqlQuery;
+        sqlQuery.prepare("UPDATE `order` SET "
+                         "`paied`=true "
+                         "WHERE `id`==:id;");
+        sqlQuery.bindValue(":id", orderId);
+        if (!sqlQuery.exec())
+        {
+            qDebug() << "Error: Fail to pay order. " << sqlQuery.lastError();
+        }
+        else
+        {
+            qDebug() << "Order paied!";
+        }
+    }
+    return payStatus;
 }
 
 

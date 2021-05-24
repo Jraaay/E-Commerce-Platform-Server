@@ -36,9 +36,6 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_singleInsertData");
         db.openDb();
         productItem tmp = productItem(data);
-        QImage img;
-        img.loadFromData(tmp.photo[0]);
-        ((Ui::TcpServer *)ui)->label->setPixmap(QPixmap::fromImage(img));
         db.singleInsertData(tmp);
         db.closeDb();
         ((TcpServer *)father)->sendData("0");
@@ -260,9 +257,14 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append("pay");
         db.openDb();
-        db.payOrder(data.value("orderId").toInt());
+        int payStatus = db.payOrder(data.value("orderId").toInt());
         db.closeDb();
-        ((TcpServer *)father)->sendData("0");
+        QJsonObject object;
+        object.insert("payStatus", payStatus);
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
         break;
     }
     case SQLITE_getDiscount:
@@ -291,15 +293,92 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_buyOneThing");
         db.openDb();
-        db.buyOne(data.value("userId").toInt(), data.value("productId").toInt());
+        int payStatus = db.buyOne(data.value("userId").toInt(), data.value("productId").toInt());
         db.closeDb();
-        ((TcpServer *)father)->sendData("0");
+        QJsonObject object;
+        object.insert("payStatus", payStatus);
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
         break;
     }
     case USER_createUser:
-    case USER_modifyUserInfo:
+    {
+
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_createUser");
+        int regStatus = userManager::createUser(data.value("curType").toInt(),
+                                data.value("loginName").toString().toStdString(),
+                                data.value("loginPassword").toString().toStdString());
+        QJsonObject object;
+        object.insert("regStatus", regStatus);
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
+        break;
+    }
+    case USER_changeUserName:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_changeUserName");
+        int status = userManager::changeUserName(data.value("userId").toInt(),
+                                data.value("userName").toString().toStdString());
+        QJsonObject object;
+        object.insert("status", status);
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
+        break;
+    }
     case USER_loginCheck:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_loginCheck");
+        userClass *curUser;
+        int loginStatus = userManager::loginCheck(data.value("curType").toInt(),
+                                data.value("loginName").toString().toStdString(),
+                                data.value("loginPassword").toString().toStdString(),
+                                curUser);
+        qDebug() << loginStatus;
+        QJsonObject object;
+        object.insert("loginStatus", loginStatus);
+        if (loginStatus == 0)
+        {
+            object.insert("curUser", curUser->getJson());
+        }
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
+        break;
+    }
     case USER_getUser:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_getUser");
+        sellerClass curUser;
+        userManager::getUser(data.value("userId").toInt(), curUser);
+        QJsonObject object;
+        object.insert("user", curUser.getJson());
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
+        break;
+    }
+    case USER_recharge:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_recharge");
+        userManager::recharge(data.value("userId").toInt(), data.value("moneyToCharge").toDouble());
+        ((TcpServer *)father)->sendData("0");
+        break;
+    }
+    case USER_changePassword:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("USER_changePassword");
+        userManager::changePassword(data.value("userId").toInt(), data.value("password").toString().toStdString());
+        ((TcpServer *)father)->sendData("0");
+        break;
+    }
     default:
         return;
     }

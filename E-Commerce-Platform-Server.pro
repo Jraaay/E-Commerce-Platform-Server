@@ -22,13 +22,17 @@ SOURCES += \
     productitem.cpp \
     requestsprocess.cpp \
     sqlite.cpp \
-    tcpserver.cpp
+    tcpserver.cpp \
+    user.cpp \
+    usermanager.cpp
 
 HEADERS += \
     productitem.h \
     requestsprocess.h \
     sqlite.h \
-    tcpserver.h
+    tcpserver.h \
+    user.h \
+    usermanager.h
 
 FORMS += \
     tcpserver.ui

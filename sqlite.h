@@ -10,6 +10,11 @@
 #include <QDir>
 #include <time.h>
 #include <QVariant>
+#include "user.h"
+#include "usermanager.h"
+
+#define LACKOFBALANCE 1
+#define LACKOFPRODUCT 2
 
 class Sqlite
 {
@@ -35,10 +40,10 @@ public:
     void newDiscount(int id) const;
     vector<vector<double>> getDiscount() const;
     void setDiscount(vector<vector<double>> discount) const;
-    void buyOne(int userId, int productId);
+    int buyOne(int userId, int productId);
     int generateOrder(int userId);
     void getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum);
-    void payOrder(int orderId);
+    int payOrder(int orderId);
     void getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid);
     // 关闭数据库
     void closeDb(void);
