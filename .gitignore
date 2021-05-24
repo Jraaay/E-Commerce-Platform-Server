@@ -1,0 +1,6 @@
+.vscode/
+*.pro.user.*
+source/
+*.jpg
+*.pro.user
+imgSource/*
