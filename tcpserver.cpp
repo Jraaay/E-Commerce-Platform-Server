@@ -42,14 +42,13 @@ void TcpServer::socket_Read_Data()
 {
     QByteArray buffer;
     buffer = tcpSocket->readAll();
-    while(this->tcpSocket->waitForReadyRead(10))
+    while(this->tcpSocket->waitForReadyRead(30))
     {
         qDebug()<<"Data receiving...";
         buffer.append(this->tcpSocket->readAll());
     }
-    qDebug() << "Got buffer: " << buffer;
     QString current_date =QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss.zzz");
-    ui->textBrowser->append(current_date + " Got buffer: ");
+    ui->textBrowser->append(current_date + " Got buffer");
     RequestsProcess::process(buffer.toStdString(), this, ui);
 }
 
@@ -63,6 +62,6 @@ void TcpServer::socket_Disconnected()
 void TcpServer::sendData(QByteArray a)
 {
     QString current_date =QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss.zzz");
-    ui->textBrowser->append(current_date + " Send data, ");
+    ui->textBrowser->append(current_date + " Send data");
     tcpSocket->write(a);
 }

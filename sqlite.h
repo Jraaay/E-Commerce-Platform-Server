@@ -22,7 +22,7 @@ public:
     // 判断数据表是否存在
     bool isTableExist(QString &tableName) const;
     // 查询全部数据
-    vector<productItem *> queryTable(string LIKE = "", string SORT = "") const;
+    vector<productItem *> queryTable(string LIKE = "", string SORT = "", int productId = -1) const;
     // 插入单条数据
     void singleInsertData(productItem item) const;
     void modifyItemInCart(int productId, int userId, int number = -1, bool checked = true);
@@ -35,7 +35,8 @@ public:
     void newDiscount(int id) const;
     vector<vector<double>> getDiscount() const;
     void setDiscount(vector<vector<double>> discount) const;
-    int generateOrder(int userId, vector<productItem> orderList, vector<int> count, vector<double> price, double priceSum);
+    void buyOne(int userId, int productId);
+    int generateOrder(int userId);
     void getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum);
     void payOrder(int orderId);
     void getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid);

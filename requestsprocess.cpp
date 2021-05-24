@@ -33,6 +33,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
     case SQLITE_singleInsertData:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_singleInsertData");
         db.openDb();
         productItem tmp = productItem(data);
         QImage img;
@@ -45,6 +46,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_modifyItemInCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_modifyItemInCart");
         db.openDb();
         int number = -1;
         bool checked  = true;
@@ -66,6 +68,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_deleteItemFromCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteItemFromCart");
         db.openDb();
         db.deleteItemFromCart(data.value("productId").toInt(),
                               data.value("userId").toInt());
@@ -75,17 +78,18 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_queryCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryCart");
         vector<productItem *> productList;
         vector<int> numberList;
         vector<bool> checkedList;
         db.openDb();
         db.queryCart(data.value("userId").toInt(), productList, numberList, checkedList);
-        db.closeDb();
         QJsonArray productArray;
         for (int i = 0; i < (int)productList.size(); i++)
         {
             productArray.append(productList[i]->getJson(db.getDiscount()));
         }
+        db.closeDb();
         QJsonObject object;
         object.insert("productList", productArray);
         QJsonArray result;
@@ -94,7 +98,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         QJsonArray array;
         for (int i = 0; i < (int)checkedList.size(); i++)
         {
-            array.append((int)checkedList[i]);
+            array.append((bool)checkedList[i]);
         }
         object.insert("checkedList", array);
         QJsonDocument document;
@@ -105,6 +109,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_queryTable:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryTable");
         db.openDb();
         vector<productItem *> productList = db.queryTable(data.value("LIKE").toString().toStdString(),
                                                           data.value("SORT").toString().toStdString());
@@ -124,6 +129,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_modifyData:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_modifyData");
         db.openDb();
         db.modifyData(productItem(data.value("item").toObject()), data.value("item").toInt());
         db.closeDb();
@@ -132,6 +138,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_deleteData:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteData");
         db.openDb();
         db.deleteData(data.value("id").toInt());
         db.closeDb();
@@ -140,6 +147,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_newDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_newDiscount");
         db.openDb();
         db.newDiscount(data.value("id").toInt());
         db.closeDb();
@@ -148,6 +156,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_setDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_setDiscount");
         db.openDb();
         vector<vector<double>> discount = db.getDiscount();
         for (int i = 0; i < (int)discount.size(); i++)
@@ -167,24 +176,9 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_generateOrder:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_generateOrder");
         db.openDb();
-        vector<productItem> orderList;
-        for (int i = 0; i < data.value("orderList").toArray().size(); i++)
-        {
-            orderList.push_back(productItem(data.value("orderList").toArray()[i].toObject()));
-        }
-        vector<int> count;
-        vector<double> price;
-        for (int i = 0; i < data.value("count").toArray().size(); i++)
-        {
-            count.push_back(data.value("count").toArray()[i].toInt());
-            price.push_back(data.value("price").toArray()[i].toDouble());
-        }
-        int orderId = db.generateOrder(data.value("userId").toInt(),
-                         orderList,
-                         count,
-                         price,
-                         data.value("priceSum").toDouble());
+        int orderId = db.generateOrder(data.value("userId").toInt());
         db.closeDb();
         QJsonObject object;
         object.insert("orderId", orderId);
@@ -196,6 +190,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getOrder:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrder");
         bool paied;
         long long time;
         int userId;
@@ -205,12 +200,12 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         double priceSum;
         db.openDb();
         db.getOrder(data.value("orderId").toInt(), paied, time, userId, orderList, count, price, priceSum);
-        db.closeDb();
         QJsonArray orderJsonList;
         for (int i = 0; i < (int)orderList.size(); i++)
         {
             orderJsonList.push_back(orderList[i]->getJson(db.getDiscount()));
         }
+        db.closeDb();
         QJsonObject object;
         object.insert("paied", paied);
         object.insert("time", time);
@@ -218,9 +213,10 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         QJsonArray result;
         std::copy (count.begin(), count.end(), std::back_inserter(result));
         object.insert("count", result);
-        std::copy (price.begin(), price.end(), std::back_inserter(result));
-        object.insert("price", result);
-        object.insert("priceSum", paied);
+        QJsonArray result2;
+        std::copy (price.begin(), price.end(), std::back_inserter(result2));
+        object.insert("price", result2);
+        object.insert("priceSum", priceSum);
         object.insert("orderList", orderJsonList);
         QJsonDocument document;
         document.setObject(object);
@@ -230,25 +226,28 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getOrderList:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrderList");
         vector<int> orderId;
         vector<double> priceSum;
         vector<long long> time;
         vector<bool> paid;
         db.openDb();
-        db.getOrderList(data.value("orderId").toInt(), orderId, priceSum, time, paid);
+        db.getOrderList(data.value("userId").toInt(), orderId, priceSum, time, paid);
         db.closeDb();
         QJsonObject object;
         QJsonArray result;
         std::copy (orderId.begin(), orderId.end(), std::back_inserter(result));
         object.insert("orderId", result);
-        std::copy (priceSum.begin(), priceSum.end(), std::back_inserter(result));
-        object.insert("priceSum", result);
-        std::copy (time.begin(), time.end(), std::back_inserter(result));
-        object.insert("time", result);
+        QJsonArray result1;
+        std::copy (priceSum.begin(), priceSum.end(), std::back_inserter(result1));
+        object.insert("priceSum", result1);
+        QJsonArray result2;
+        std::copy (time.begin(), time.end(), std::back_inserter(result2));
+        object.insert("time", result2);
         QJsonArray array;
         for (int i = 0; i < (int)paid.size(); i++)
         {
-            array.append((qlonglong)paid[i]);
+            array.append((bool)paid[i]);
         }
         object.insert("paid", array);
         QJsonDocument document;
@@ -259,6 +258,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case pay:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("pay");
         db.openDb();
         db.payOrder(data.value("orderId").toInt());
         db.closeDb();
@@ -267,6 +267,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getDiscount");
         db.openDb();
         vector<vector<double>> discount = db.getDiscount();
         db.closeDb();
@@ -284,6 +285,16 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         document.setObject(object);
         string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
         ((TcpServer *)father)->sendData(jsonStr.c_str());
+        break;
+    }
+    case SQLITE_buyOneThing:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_buyOneThing");
+        db.openDb();
+        db.buyOne(data.value("userId").toInt(), data.value("productId").toInt());
+        db.closeDb();
+        ((TcpServer *)father)->sendData("0");
+        break;
     }
     case USER_createUser:
     case USER_modifyUserInfo:

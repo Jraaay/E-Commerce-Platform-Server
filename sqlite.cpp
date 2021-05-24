@@ -290,7 +290,7 @@ void Sqlite::queryCart(int userId, vector<productItem *> &productList, vector<in
                 sqlQueryPhoto.exec("SELECT * FROM `productPhoto` WHERE `productId` LIKE " + sqlQuery2.value(0).toString());
                 while (sqlQueryPhoto.next())
                 {
-                    tmp->photo.push_back(sqlQueryPhoto.value(2).toByteArray());
+                    tmp->photo.push_back(sqlQueryPhoto.value(2).toByteArray().toBase64());
                 }
                 productList.push_back(tmp);
                 numberList.push_back(sqlQuery.value(3).toInt());
@@ -301,7 +301,7 @@ void Sqlite::queryCart(int userId, vector<productItem *> &productList, vector<in
 }
 
 /* 查询全部数据 */
-vector<productItem *> Sqlite::queryTable(string LIKE, string SORT) const
+vector<productItem *> Sqlite::queryTable(string LIKE, string SORT, int productId) const
 {
     vector<productItem *> productList;
     QSqlQuery sqlQuery;
@@ -309,6 +309,10 @@ vector<productItem *> Sqlite::queryTable(string LIKE, string SORT) const
     if (LIKE != "")
     {
         sqlCommand += " AND (`name` LIKE '%" + LIKE + "%' OR `description` LIKE '%" + LIKE + "%')";
+    }
+    if (productId != -1)
+    {
+        sqlCommand += " AND `id`==" + to_string(productId) + ";";
     }
     sqlCommand += SORT;
     qDebug() << sqlCommand.c_str();
@@ -502,8 +506,46 @@ void Sqlite::setDiscount(vector<vector<double>> discount) const
     }
 }
 
-int Sqlite::generateOrder(int userId, vector<productItem> orderList, vector<int> count, vector<double> price, double priceSum)
+int Sqlite::generateOrder(int userId)
 {
+    vector<productItem *> productList;
+    vector<int> numberList;
+    vector<bool> checkedList;
+    vector<productItem> orderList;
+    vector<int> count;
+    vector<double> price;
+    vector<vector<double>> discount = getDiscount();
+    queryCart(userId, productList, numberList, checkedList);
+
+    double priceSum = 0;
+    for (int i = 0; i < (int)productList.size(); i++)
+    {
+        if (numberList[i] > productList[i]->remaining)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (checkedList[i])
+                {
+                    productList[i]->remaining+=numberList[i];
+
+                    modifyData(*productList[i], 0);
+
+                }
+            }
+            break;
+        }
+        if (checkedList[i])
+        {
+            priceSum += productList[i]->getPrice(discount) * numberList[i];
+            orderList.push_back(*productList[i]);
+            count.push_back(numberList[i]);
+            price.push_back(productList[i]->getPrice(discount));
+            productList[i]->remaining-=numberList[i];
+
+            modifyData(*productList[i], 0);
+
+        }
+    }
     int orderId;
     QSqlQuery sqlQuery;
     //(`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false)
@@ -541,6 +583,87 @@ int Sqlite::generateOrder(int userId, vector<productItem> orderList, vector<int>
         }
     }
     return orderId;
+}
+
+void Sqlite::buyOne(int userId, int productId)
+{
+    vector<productItem *> productList = queryTable("","",productId);
+    vector<int> numberList;
+    numberList.push_back(1);
+    vector<bool> checkedList;
+    checkedList.push_back(true);
+
+    vector<productItem> orderList;
+    vector<int> count;
+    vector<double> price;
+    vector<vector<double>> discount = getDiscount();
+
+    double priceSum = 0;
+    for (int i = 0; i < (int)productList.size(); i++)
+    {
+        if (numberList[i] > productList[i]->remaining)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                if (checkedList[i])
+                {
+                    productList[i]->remaining+=numberList[i];
+
+                    modifyData(*productList[i], 0);
+
+                }
+            }
+            break;
+        }
+        if (checkedList[i])
+        {
+            priceSum += productList[i]->getPrice(discount) * numberList[i];
+            orderList.push_back(*productList[i]);
+            count.push_back(numberList[i]);
+            price.push_back(productList[i]->getPrice(discount));
+            productList[i]->remaining-=numberList[i];
+
+            modifyData(*productList[i], 0);
+
+        }
+    }
+    int orderId;
+    QSqlQuery sqlQuery;
+    //(`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false)
+    sqlQuery.prepare("INSERT INTO `order` (`userId`, `price`, `time`) VALUES (:userId, :price, :time)");
+    sqlQuery.bindValue(":userId", userId);
+    sqlQuery.bindValue(":price", priceSum);
+    time_t t;
+    time(&t);
+    qDebug() << t;
+    sqlQuery.bindValue(":time", QVariant::fromValue(t));
+    if (!sqlQuery.exec())
+    {
+        qDebug() << "Error: Fail to generate order. " << sqlQuery.lastError();
+    }
+    else
+    {
+        qDebug() << "Order generated!";
+        orderId = sqlQuery.lastInsertId().toInt();
+    }
+    for (int i = 0; i < (int)orderList.size(); i++)
+    {
+        deleteItemFromCart(orderList[i].id, userId);
+        sqlQuery.prepare("INSERT INTO `orderItem` (`orderId`, `productId`, `price`, `number`) VALUES (:orderId, :productId, :price, :number)");
+        sqlQuery.bindValue(":orderId", orderId);
+        sqlQuery.bindValue(":productId", orderList[i].id);
+        sqlQuery.bindValue(":price", price[i]);
+        sqlQuery.bindValue(":number", count[i]);
+        if (!sqlQuery.exec())
+        {
+            qDebug() << "Error: Fail to generate order. " << sqlQuery.lastError();
+        }
+        else
+        {
+            qDebug() << "Order generated!";
+        }
+    }
+    payOrder(orderId);
 }
 
 void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum)
@@ -599,7 +722,7 @@ void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, ve
                     sqlQueryPhoto.exec("SELECT * FROM `productPhoto` WHERE `productId` LIKE " + sqlQuery3.value(0).toString());
                     while (sqlQueryPhoto.next())
                     {
-                        tmp->photo.push_back(sqlQueryPhoto.value(2).toByteArray());
+                        tmp->photo.push_back(sqlQueryPhoto.value(2).toByteArray().toBase64());
                     }
                     //(`id` INTEGER PRIMARY KEY, `orderId` INTEGER NOT NULL,`productId` INTEGER NOT NULL, `price` BOOLEAN DEFAULT false, `number` INTEGER NOT NULL)
                     orderList.push_back(tmp);

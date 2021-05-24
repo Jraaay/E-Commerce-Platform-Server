@@ -19,6 +19,7 @@
 #define USER_getUser 15
 #define pay 16
 #define SQLITE_getDiscount 17
+#define SQLITE_buyOneThing 18
 
 #include <QObject>
 #include <QJsonObject>
