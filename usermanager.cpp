@@ -517,7 +517,7 @@ int userManager::changeUserName(int userId, string userName)
         outFile.close();
         return 0;
     }
-    else if (numToChange != -1)
+    else if (numToChange == -1)
     {
         bool only2 = true;
         int numToChange = -1;
