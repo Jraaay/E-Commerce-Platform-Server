@@ -12,7 +12,7 @@ jobs:
             qt_tools: "tools_mingw,7.3.0-1-202004170606,qt.tools.win64_mingw730"
             qt_tools_mingw_install: mingw730_64
     env:
-      targetName: E-Commerce-Platform.exe
+      targetName: E-Commerce-Platform-Server.exe
     steps:
       - name: Install Qt
         uses: jurplel/install-qt-action@v2.13.0
@@ -48,7 +48,7 @@ jobs:
           qmake
           mingw32-make
       - name: deploy
-        run: windeployqt release/E-Commerce-Platform.exe
+        run: windeployqt release/E-Commerce-Platform-Server.exe
       - name: clean
         run: del release/*.o
       - name: clean
@@ -57,5 +57,5 @@ jobs:
         run: del release/*.h
       - uses: actions/upload-artifact@v2
         with:
-          name: E-Commerce-Platform
+          name: E-Commerce-Platform-Server
           path: release/
