@@ -95,6 +95,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_modifyItemInCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_modifyItemInCart");
         db.openDb();
         int number = -1;
@@ -121,6 +122,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_deleteItemFromCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteItemFromCart");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -135,6 +137,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_queryCart:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryCart");
         vector<productItem *> productList;
         vector<int> numberList;
@@ -170,6 +173,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_queryTable:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryTable");
         db.openDb();
         vector<productItem *> productList = db.queryTable(data.value("LIKE").toString().toStdString(),
@@ -203,6 +207,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_deleteData:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteData");
         db.openDb();
         if (!auth(key, db.queryTable("", "", data.value("id").toInt())[0]->seller, ui))
@@ -216,6 +221,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_newDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_newDiscount");
         db.openDb();
         if (!auth(key, data.value("id").toInt(), ui))
@@ -229,6 +235,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_setDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_setDiscount");
         if (!auth(key, data.value("userId").toDouble(), ui))
         {
@@ -253,6 +260,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_generateOrder:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_generateOrder");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -271,6 +279,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getOrder:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrder");
         bool paied;
         long long time;
@@ -311,6 +320,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getOrderList:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrderList");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -347,6 +357,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case pay:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("pay");
         bool paied;
         long long time;
@@ -373,6 +384,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_getDiscount:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getDiscount");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -399,6 +411,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case SQLITE_buyOneThing:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_buyOneThing");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -417,6 +430,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_createUser:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_createUser");
         int regStatus = userManager::createUser(data.value("curType").toInt(),
                                 data.value("loginName").toString().toStdString(),
@@ -431,6 +445,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_changeUserName:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_changeUserName");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -448,6 +463,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_loginCheck:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         QByteArray secretKey = "d=n+sia*&j#0^p@8!u20^f4g8r@p3(tgh=8uhx5_sxklwy_$$x";
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_loginCheck");
         userClass *curUser;
@@ -482,6 +498,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_getUser:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_getUser");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -499,6 +516,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_recharge:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_recharge");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
@@ -510,6 +528,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     }
     case USER_changePassword:
     {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_changePassword");
         if (!auth(key, data.value("userId").toInt(), ui))
         {
