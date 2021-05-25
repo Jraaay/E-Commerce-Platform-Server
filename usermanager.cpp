@@ -191,6 +191,7 @@ int userManager::createUser(int curType, string loginName, string loginPassword)
             outFile << array2.toStdString();
             outFile.close();
             Sqlite db;
+            db.openDb();
             db.newDiscount(tmp.uid);
             db.closeDb();
         }
