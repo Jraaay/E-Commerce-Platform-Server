@@ -31,6 +31,7 @@
 #include <QJsonArray>
 #include "usermanager.h"
 #include "user.h"
+#include <QMessageAuthenticationCode>
 
 using namespace std;
 
@@ -41,6 +42,7 @@ public:
     explicit RequestsProcess(void *father, QObject *parent = nullptr);
     static void process(string jsonStr, void *father, void *ui);
     void *_father = nullptr;
+    static bool auth(string key, int userId, void *ui);
 
 signals:
 
