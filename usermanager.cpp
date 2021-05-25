@@ -240,7 +240,7 @@ int userManager::createUser(int curType, string loginName, string loginPassword)
             object2.insert("uid", uidMax);
             QJsonDocument document2;
             document2.setObject(object2);
-            QByteArray array2 = document.toJson(QJsonDocument::Compact);
+            QByteArray array2 = document2.toJson(QJsonDocument::Compact);
             ofstream outFile2;
             outFile.open("uidMaxFile.json");
             outFile << array2.toStdString();
