@@ -6,6 +6,8 @@ TcpServer::TcpServer(QWidget *parent)
     , ui(new Ui::TcpServer)
 {
     ui->setupUi(this);
+    setWindowFlags(Qt::WindowStaysOnTopHint);
+    show();
     tcpServer = new QTcpServer();
 //    qDebug()<< tcpServer->listen(QHostAddress::Any, 8848);
     if(!tcpServer->listen(QHostAddress::Any, 8848))
