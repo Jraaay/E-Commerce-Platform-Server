@@ -13,7 +13,7 @@ bool RequestsProcess::auth(string key, int userId, void *ui)
     if ((int)key.find(".") == -1)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append("Auth failed, key is " + QString::fromStdString(key));
-        qDebug() << "Auth failed";
+        qDebug() << "Auth failed, key is " + QString::fromStdString(key);
         return false;
     }
     else
@@ -23,7 +23,7 @@ bool RequestsProcess::auth(string key, int userId, void *ui)
         if (QMessageAuthenticationCode::hash(jsonStr, secretKey, QCryptographicHash::Sha256).toBase64() != keyStr)
         {
             ((Ui::TcpServer *)ui)->textBrowser->append("Auth failed, key is " + QString::fromStdString(key));
-            qDebug() << "Auth failed";
+            qDebug() << "Auth failed, key is " + QString::fromStdString(key);
             return false;
         }
         QJsonParseError jsonError;
@@ -36,19 +36,20 @@ bool RequestsProcess::auth(string key, int userId, void *ui)
                 if (object.value("userId").toInt() != userId)
                 {
                     ((Ui::TcpServer *)ui)->textBrowser->append("Auth failed, key is " + QString::fromStdString(key));
-                    qDebug() << "Auth failed";
+                    qDebug() << "Auth failed, key is " + QString::fromStdString(key);
                     return false;
                 }
             }
         }
     }
     ((Ui::TcpServer *)ui)->textBrowser->append("Auth successfully, user id is " + QString::fromStdString(to_string(userId)));
-    qDebug() << "Auth successfully";
+    qDebug() << "Auth successfully, user id is " + QString::fromStdString(to_string(userId));
     return true;
 }
 
 void RequestsProcess::process(string jsonStr, void *father, void *ui)
 {
+    qInstallMessageHandler(log::customMessageHandler);
     string key;
     int type = -1;
     QJsonObject data;
@@ -82,6 +83,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     case SQLITE_singleInsertData:
     {
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_singleInsertData");
+        qDebug() << "SQLITE_singleInsertData";
         db.openDb();
         productItem tmp = productItem(data);
         if (!auth(key, tmp.seller, ui))
@@ -97,6 +99,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_modifyItemInCart");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_modifyItemInCart";
         db.openDb();
         int number = -1;
         bool checked  = true;
@@ -124,6 +128,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteItemFromCart");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_deleteItemFromCart";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -139,6 +145,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryCart");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_queryCart";
         vector<productItem *> productList;
         vector<int> numberList;
         vector<bool> checkedList;
@@ -175,6 +183,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_queryTable");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_queryTable";
         db.openDb();
         vector<productItem *> productList = db.queryTable(data.value("LIKE").toString().toStdString(),
                                                           data.value("SORT").toString().toStdString());
@@ -195,11 +205,12 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     case SQLITE_modifyData:
     {
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_modifyData");
+        qDebug() << "SQLITE_modifyData";
+        db.openDb();
         if (!auth(key, productItem(data.value("item").toObject()).seller, ui))
         {
             break;
         }
-        db.openDb();
         db.modifyData(productItem(data.value("item").toObject()), data.value("updateImage").toInt());
         db.closeDb();
         ((TcpServer *)father)->sendData("0");
@@ -209,6 +220,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_deleteData");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_deleteData";
         db.openDb();
         if (!auth(key, db.queryTable("", "", data.value("id").toInt())[0]->seller, ui))
         {
@@ -223,6 +236,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_newDiscount");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_newDiscount";
         db.openDb();
         if (!auth(key, data.value("id").toInt(), ui))
         {
@@ -237,6 +252,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_setDiscount");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_setDiscount";
         if (!auth(key, data.value("userId").toDouble(), ui))
         {
             break;
@@ -262,6 +279,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_generateOrder");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_generateOrder";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -281,6 +300,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrder");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_getOrder";
         bool paied;
         long long time;
         int userId;
@@ -290,16 +311,16 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         double priceSum;
         db.openDb();
         db.getOrder(data.value("orderId").toInt(), paied, time, userId, orderList, count, price, priceSum);
+        if (!auth(key, userId, ui))
+        {
+            break;
+        }
         QJsonArray orderJsonList;
         for (int i = 0; i < (int)orderList.size(); i++)
         {
             orderJsonList.push_back(orderList[i]->getJson(db.getDiscount()));
         }
         db.closeDb();
-        if (!auth(key, userId, ui))
-        {
-            break;
-        }
         QJsonObject object;
         object.insert("paied", paied);
         object.insert("time", time);
@@ -322,6 +343,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getOrderList");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_getOrderList";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -359,6 +382,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("pay");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "pay";
         bool paied;
         long long time;
         int userId;
@@ -386,6 +411,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_getDiscount");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_getDiscount";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -413,6 +440,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_buyOneThing");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_buyOneThing";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -432,6 +461,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_createUser");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_createUser";
         int regStatus = userManager::createUser(data.value("curType").toInt(),
                                 data.value("loginName").toString().toStdString(),
                                 data.value("loginPassword").toString().toStdString());
@@ -447,6 +478,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_changeUserName");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_changeUserName";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -464,14 +497,15 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     case USER_loginCheck:
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
-        QByteArray secretKey = "d=n+sia*&j#0^p@8!u20^f4g8r@p3(tgh=8uhx5_sxklwy_$$x";
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_loginCheck");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_loginCheck";
+        QByteArray secretKey = "d=n+sia*&j#0^p@8!u20^f4g8r@p3(tgh=8uhx5_sxklwy_$$x";
         userClass *curUser;
         int loginStatus = userManager::loginCheck(data.value("curType").toInt(),
                                 data.value("loginName").toString().toStdString(),
                                 data.value("loginPassword").toString().toStdString(),
                                 curUser);
-        qDebug() << loginStatus;
         QJsonObject object;
         object.insert("loginStatus", loginStatus);
         if (loginStatus == 0)
@@ -500,6 +534,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_getUser");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_getUser";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -518,6 +554,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_recharge");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_recharge";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;
@@ -530,6 +568,8 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
     {
         ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
         ((Ui::TcpServer *)ui)->textBrowser->append("USER_changePassword");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "USER_changePassword";
         if (!auth(key, data.value("userId").toInt(), ui))
         {
             break;

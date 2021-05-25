@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    log.cpp \
     main.cpp \
     productitem.cpp \
     requestsprocess.cpp \
@@ -27,6 +28,7 @@ SOURCES += \
     usermanager.cpp
 
 HEADERS += \
+    log.h \
     productitem.h \
     requestsprocess.h \
     sqlite.h \

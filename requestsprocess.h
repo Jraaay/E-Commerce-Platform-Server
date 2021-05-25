@@ -32,6 +32,7 @@
 #include "usermanager.h"
 #include "user.h"
 #include <QMessageAuthenticationCode>
+#include "log.h"
 
 using namespace std;
 

@@ -9,7 +9,6 @@ TcpServer::TcpServer(QWidget *parent)
     setWindowFlags(Qt::WindowStaysOnTopHint);
     show();
     tcpServer = new QTcpServer();
-//    qDebug()<< tcpServer->listen(QHostAddress::Any, 8848);
     if(!tcpServer->listen(QHostAddress::Any, 8848))
     {
         //若出错，则输出错误信息
@@ -109,7 +108,6 @@ void TcpServer::server_New_Connect()
     tcpSocket = tcpServer->nextPendingConnection();
     connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpServer::socket_Read_Data);
     QObject::connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpServer::socket_Disconnected);
-    qDebug() << "connected";
     QString current_date =QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss.zzz");
     ui->textBrowser->append(current_date + " connected");
 }
@@ -121,7 +119,6 @@ void TcpServer::socket_Read_Data()
     buffer = tcpSocket->readAll();
     while(this->tcpSocket->waitForReadyRead(30))
     {
-        qDebug()<<"Data receiving...";
         buffer.append(this->tcpSocket->readAll());
     }
     QString current_date =QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss.zzz");
@@ -131,7 +128,6 @@ void TcpServer::socket_Read_Data()
 
 void TcpServer::socket_Disconnected()
 {
-    qDebug() << "Disconnected";
     QString current_date =QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss.zzz");
     ui->textBrowser->append(current_date + " Disconnected");
 }

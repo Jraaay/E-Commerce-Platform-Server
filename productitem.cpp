@@ -27,7 +27,6 @@ productItem::productItem(QJsonObject data)
     remaining = data.value("remaining").toInt();
     discount = data.value("discount").toDouble();
     QJsonArray photoArray = data.value("photo").toArray();
-    qDebug()<<photoArray.size();
     for (int i = 0; i < photoArray.size(); i++)
     {
         photo.push_back(QByteArray::fromBase64(photoArray[i].toString().toUtf8()));

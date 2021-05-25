@@ -12,6 +12,7 @@
 #include <QVariant>
 #include "user.h"
 #include "usermanager.h"
+#include "log.h"
 
 #define LACKOFBALANCE 1
 #define LACKOFPRODUCT 2

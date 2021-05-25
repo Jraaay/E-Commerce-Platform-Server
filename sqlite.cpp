@@ -16,10 +16,12 @@ Sqlite::Sqlite()
         db.setDatabaseName("E-Commerce-Platform.db");
     }
     QString tableName = "productItem";
+    db.open();
     if (!isTableExist(tableName))
     {
         createTable();
     }
+    db.close();
 }
 
 /* 打开数据库 */
@@ -63,10 +65,6 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Table created!";
-    }
     // 构建创建数据库的sql语句字符串
     createSql = QString("CREATE TABLE `productPhoto` (`id` INTEGER PRIMARY KEY, `productId` INTEGER NOT NULL, `photo` BLOB NOT NULL);");
     sqlQuery.prepare(createSql);
@@ -75,20 +73,12 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Table created!";
-    }
     createSql = QString("CREATE TABLE `discount` (`fooddiscount` DOUBLE(32,2) NOT NULL,`clothesdiscount` DOUBLE(32,2) NOT NULL,`bookdiscount` DOUBLE(32,2) NOT NULL, `seller` INTEGER PRIMARY KEY NOT NULL);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
     if (!sqlQuery.exec())
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
-    }
-    else
-    {
-        qDebug() << "Table created!";
     }
     createSql = QString("CREATE TABLE `cart` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`productId` INTEGER NOT NULL, `number` INTEGER NOT NULL, `checked` BOOLEAN DEFAULT true);");
     sqlQuery.prepare(createSql);
@@ -97,10 +87,6 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Table created!";
-    }
     createSql = QString("CREATE TABLE `order` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
@@ -108,20 +94,12 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Table created!";
-    }
     createSql = QString("CREATE TABLE `orderItem` (`id` INTEGER PRIMARY KEY, `orderId` INTEGER NOT NULL,`productId` INTEGER NOT NULL, `price` BOOLEAN DEFAULT false, `number` INTEGER NOT NULL);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
     if (!sqlQuery.exec())
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
-    }
-    else
-    {
-        qDebug() << "Table created!";
     }
 }
 
@@ -143,10 +121,6 @@ void Sqlite::singleInsertData(productItem item) const
     {
         qDebug() << "Error: Fail to insert. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Insert successed!" << sqlQuery.lastInsertId().toInt();
-    }
     int productId = sqlQuery.lastInsertId().toInt();
     for (int i = 0; i < int(item.photo.size()); i++)
     {
@@ -156,10 +130,6 @@ void Sqlite::singleInsertData(productItem item) const
         if (!sqlQuery.exec())
         {
             qDebug() << "Error: Fail to insert. " << sqlQuery.lastError();
-        }
-        else
-        {
-            qDebug() << "Insert successed!" << sqlQuery.lastInsertId().toInt();
         }
     }
 }
@@ -200,10 +170,6 @@ void Sqlite::modifyItemInCart(int productId, int userId, int number, bool checke
             {
                 qDebug() << "Error: Fail to update. " << sqlQuery2.lastError();
             }
-            else
-            {
-                qDebug() << "Update successed!";
-            }
             exist = true;
         }
     }
@@ -223,10 +189,6 @@ void Sqlite::modifyItemInCart(int productId, int userId, int number, bool checke
         {
             qDebug() << "Error: Fail to insert. " << sqlQuery.lastError();
         }
-        else
-        {
-            qDebug() << "Insert successed!" << sqlQuery.lastInsertId().toInt();
-        }
     }
 }
 
@@ -241,10 +203,6 @@ void Sqlite::deleteItemFromCart(int productId, int userId)
     if (!sqlQuery.exec())
     {
         qDebug() << "Error: Fail to delete item from cart. " << sqlQuery.lastError();
-    }
-    else
-    {
-        qDebug() << "Delete item from cart successed!" << sqlQuery.lastInsertId().toInt();
     }
 }
 
@@ -331,7 +289,6 @@ vector<productItem *> Sqlite::queryTable(string LIKE, string SORT, int productId
         sqlCommand += " AND `id`==" + to_string(productId) + ";";
     }
     sqlCommand += SORT;
-    qDebug() << sqlCommand.c_str();
     sqlQuery.exec(sqlCommand.c_str());
     if (!sqlQuery.exec())
     {
@@ -411,10 +368,6 @@ void Sqlite::modifyData(productItem item, int updateImage) const
     {
         qDebug() << "Error: Fail to update. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Update successed!";
-    }
     if (updateImage) //对图片更改进行处理
     {
         const int productId = item.id;
@@ -425,10 +378,6 @@ void Sqlite::modifyData(productItem item, int updateImage) const
         {
             qDebug() << "Error: Fail to delete old photos. " << sqlQuery.lastError();
         }
-        else
-        {
-            qDebug() << "Old photos deleting successed!";
-        }
         for (int i = 0; i < int(item.photo.size()); i++)
         {
             sqlQuery.prepare("INSERT INTO `productPhoto` (`productId`,`photo`) VALUES (:productId, :photo)");
@@ -437,10 +386,6 @@ void Sqlite::modifyData(productItem item, int updateImage) const
             if (!sqlQuery.exec())
             {
                 qDebug() << "Error: Fail to update photos. " << sqlQuery.lastError();
-            }
-            else
-            {
-                qDebug() << "Photos update successed!";
             }
         }
     }
@@ -459,10 +404,6 @@ void Sqlite::deleteData(int id) const
     {
         qDebug() << "Error: Fail to delete. " << sqlQuery.lastError();
     }
-    else
-    {
-        qDebug() << "Deleting successed!";
-    }
 }
 
 /* 新账户初始化 */
@@ -475,10 +416,6 @@ void Sqlite::newDiscount(int id) const
     if (!sqlQuery.exec())
     {
         qDebug() << "Error: Fail to insert discount. " << sqlQuery.lastError();
-    }
-    else
-    {
-        qDebug() << "Insert success!";
     }
 }
 
@@ -522,11 +459,7 @@ void Sqlite::setDiscount(vector<vector<double>> discount) const
         sqlQuery.bindValue(":bookdiscount", discount[i][2]);
         if (!sqlQuery.exec())
         {
-            qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
-        }
-        else
-        {
-            qDebug() << "Table created!";
+            qDebug() << "Error: Fail to update discount. " << sqlQuery.lastError();
         }
     }
 }
@@ -584,7 +517,6 @@ int Sqlite::generateOrder(int userId)
     sqlQuery.bindValue(":price", priceSum);
     time_t t;
     time(&t);
-    qDebug() << t;
     sqlQuery.bindValue(":time", QVariant::fromValue(t));
     if (!sqlQuery.exec())
     {
@@ -592,7 +524,6 @@ int Sqlite::generateOrder(int userId)
     }
     else
     {
-        qDebug() << "Order generated!";
         orderId = sqlQuery.lastInsertId().toInt();
     }
     for (int i = 0; i < (int)orderList.size(); i++)
@@ -606,10 +537,6 @@ int Sqlite::generateOrder(int userId)
         if (!sqlQuery.exec())
         {
             qDebug() << "Error: Fail to generate order. " << sqlQuery.lastError();
-        }
-        else
-        {
-            qDebug() << "Order generated!";
         }
     }
     return orderId;
@@ -668,7 +595,6 @@ int Sqlite::buyOne(int userId, int productId)
     sqlQuery.bindValue(":price", priceSum);
     time_t t;
     time(&t);
-    qDebug() << t;
     sqlQuery.bindValue(":time", QVariant::fromValue(t));
     if (!sqlQuery.exec())
     {
@@ -676,7 +602,6 @@ int Sqlite::buyOne(int userId, int productId)
     }
     else
     {
-        qDebug() << "Order generated!";
         orderId = sqlQuery.lastInsertId().toInt();
     }
     for (int i = 0; i < (int)orderList.size(); i++)
@@ -690,10 +615,6 @@ int Sqlite::buyOne(int userId, int productId)
         if (!sqlQuery.exec())
         {
             qDebug() << "Error: Fail to generate order. " << sqlQuery.lastError();
-        }
-        else
-        {
-            qDebug() << "Order generated!";
         }
     }
     if (payStatus == -1)
@@ -900,10 +821,6 @@ int Sqlite::payOrder(int orderId)
         {
             qDebug() << "Error: Fail to pay order. " << sqlQuery.lastError();
         }
-        else
-        {
-            qDebug() << "Order paied!";
-        }
     }
     return payStatus;
 }
@@ -920,7 +837,6 @@ void Sqlite::getOrderList(int userId, vector<int> &orderId, vector<double> &pric
     }
     else
     {
-        qDebug() << "Order get!";
         while (sqlQuery.next())
         {
             orderId.push_back(sqlQuery.value(0).toInt());
