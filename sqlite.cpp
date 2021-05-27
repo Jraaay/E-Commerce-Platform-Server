@@ -482,11 +482,11 @@ int Sqlite::generateOrder(int userId)
         {
             for (int j = 0; j < i; j++)
             {
-                if (checkedList[i] && numberList[i] > 0)
+                if (checkedList[j] && numberList[j] > 0)
                 {
-                    productList[i]->remaining+=numberList[i];
+                    productList[j]->remaining+=numberList[j];
 
-                    modifyData(*productList[i], 0);
+                    modifyData(*productList[j], 0);
 
                 }
             }
