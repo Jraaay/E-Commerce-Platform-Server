@@ -22,6 +22,7 @@
 #define SQLITE_buyOneThing 18
 #define USER_recharge 19
 #define USER_changePassword 20
+#define SQLITE_cancelOrder 21
 
 #include <QObject>
 #include <QJsonObject>

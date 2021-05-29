@@ -303,6 +303,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         qDebug() << jsonStr.c_str();
         qDebug() << "SQLITE_getOrder";
         bool paied;
+        bool canceled;
         long long time;
         int userId;
         vector<productItem *> orderList;
@@ -310,7 +311,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         vector<double> price;
         double priceSum;
         db.openDb();
-        db.getOrder(data.value("orderId").toInt(), paied, time, userId, orderList, count, price, priceSum);
+        db.getOrder(data.value("orderId").toInt(), canceled, paied, time, userId, orderList, count, price, priceSum);
         if (!auth(key, userId, ui))
         {
             break;
@@ -323,6 +324,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         db.closeDb();
         QJsonObject object;
         object.insert("paied", paied);
+        object.insert("canceled", canceled);
         object.insert("time", time);
         object.insert("userId", userId);
         QJsonArray result;
@@ -353,8 +355,9 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         vector<double> priceSum;
         vector<long long> time;
         vector<bool> paid;
+        vector<bool> canceled;
         db.openDb();
-        db.getOrderList(data.value("userId").toInt(), orderId, priceSum, time, paid);
+        db.getOrderList(data.value("userId").toInt(), orderId, priceSum, time, paid, canceled);
         db.closeDb();
         QJsonObject object;
         QJsonArray result;
@@ -372,6 +375,12 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
             array.append((bool)paid[i]);
         }
         object.insert("paid", array);
+        QJsonArray array2;
+        for (int i = 0; i < (int)canceled.size(); i++)
+        {
+            array2.append((bool)canceled[i]);
+        }
+        object.insert("canceled", array2);
         QJsonDocument document;
         document.setObject(object);
         string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
@@ -385,6 +394,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         qDebug() << jsonStr.c_str();
         qDebug() << "pay";
         bool paied;
+        bool canceled;
         long long time;
         int userId;
         vector<productItem *> orderList;
@@ -392,7 +402,7 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         vector<double> price;
         double priceSum;
         db.openDb();
-        db.getOrder(data.value("orderId").toInt(), paied, time, userId, orderList, count, price, priceSum);
+        db.getOrder(data.value("orderId").toInt(), canceled, paied, time, userId, orderList, count, price, priceSum);
         if (!auth(key, userId, ui))
         {
             break;
@@ -576,6 +586,36 @@ void RequestsProcess::process(string jsonStr, void *father, void *ui)
         }
         userManager::changePassword(data.value("userId").toInt(), data.value("password").toString().toStdString());
         ((TcpServer *)father)->sendData("0");
+        break;
+    }
+    case SQLITE_cancelOrder:
+    {
+        ((Ui::TcpServer *)ui)->textBrowser->append(jsonStr.c_str());
+        ((Ui::TcpServer *)ui)->textBrowser->append("SQLITE_cancelOrder");
+        qDebug() << jsonStr.c_str();
+        qDebug() << "SQLITE_cancelOrder";
+        bool paied;
+        bool canceled;
+        long long time;
+        int userId;
+        vector<productItem *> orderList;
+        vector<int> count;
+        vector<double> price;
+        double priceSum;
+        db.openDb();
+        db.getOrder(data.value("orderId").toInt(), canceled, paied, time, userId, orderList, count, price, priceSum);
+        if (!auth(key, userId, ui))
+        {
+            break;
+        }
+        int cancelStatus = db.cancelOrder(data.value("orderId").toInt());
+        db.closeDb();
+        QJsonObject object;
+        object.insert("cancelStatus", cancelStatus);
+        QJsonDocument document;
+        document.setObject(object);
+        string jsonStr = document.toJson(QJsonDocument::Compact).toStdString();
+        ((TcpServer *)father)->sendData(jsonStr.c_str());
         break;
     }
     default:

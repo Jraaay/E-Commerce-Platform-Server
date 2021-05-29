@@ -87,7 +87,7 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    createSql = QString("CREATE TABLE `order` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false);");
+    createSql = QString("CREATE TABLE `order` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false, `canceled` BOOLEAN DEFAULT false);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
     if (!sqlQuery.exec())
@@ -624,7 +624,7 @@ int Sqlite::buyOne(int userId, int productId)
     return payStatus;
 }
 
-void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum)
+void Sqlite::getOrder(int orderId, bool &canceled, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum)
 {
     vector<sellerClass> sellerList = userManager::getSellerList();
     QSqlQuery sqlQuery;
@@ -638,6 +638,7 @@ void Sqlite::getOrder(int orderId, bool &paied, long long &time, int &userId, ve
     {
         while (sqlQuery.next())
         {
+            canceled = sqlQuery.value(5).toBool();
             paied = sqlQuery.value(4).toBool();
             time = sqlQuery.value(3).toLongLong();
             priceSum = sqlQuery.value(2).toDouble();
@@ -706,13 +707,19 @@ int Sqlite::payOrder(int orderId)
 {
     int payStatus = -1;
     bool paid;
+    bool canceled;
     long long time;
     int userId;
     vector<productItem *> orderList;
     vector<int> count;
     vector<double> price;
     double priceSum;
-    getOrder(orderId, paid, time, userId, orderList, count, price, priceSum);
+    getOrder(orderId, canceled, paid, time, userId, orderList, count, price, priceSum);
+    if (canceled)
+    {
+        payStatus = PAYORDERCANCELED;
+        return payStatus;
+    }
     sellerClass curUser;
     userManager::getUser(userId, curUser);
 
@@ -826,10 +833,47 @@ int Sqlite::payOrder(int orderId)
 }
 
 
-void Sqlite::getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid)
+int Sqlite::cancelOrder(int orderId)
+{
+    bool paied;
+    bool canceled;
+    long long time;
+    int userId;
+    vector<productItem *> orderList;
+    vector<int> count;
+    vector<double> price;
+    double priceSum;
+    getOrder(orderId, canceled, paied, time, userId, orderList, count, price, priceSum);
+    if (paied)
+    {
+        return ORDERPAID;
+    }
+    if (canceled)
+    {
+        return ORDERCANCELED;
+    }
+    for (int i = 0; i < (int)orderList.size(); i++)
+    {
+        productItem *product = queryTable("", "", orderList[i]->id)[0];
+        product->remaining += count[i];
+        modifyData(*product, 0);
+    }
+    QSqlQuery sqlQuery;
+    sqlQuery.prepare("UPDATE `order` SET "
+                     "`canceled`=true "
+                     "WHERE `id`==:id;");
+    sqlQuery.bindValue(":id", orderId);
+    if (!sqlQuery.exec())
+    {
+        qDebug() << "Error: Fail to pay order. " << sqlQuery.lastError();
+    }
+    return 0;
+}
+
+void Sqlite::getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid, vector<bool> &canceled)
 {
     QSqlQuery sqlQuery;
-    sqlQuery.prepare("SELECT * FROM `order` WHERE `userId`==:userId  ORDER BY `time` DESC");
+    sqlQuery.prepare("SELECT * FROM `order` WHERE `userId`==:userId ORDER BY `time` DESC");
     sqlQuery.bindValue(":userId", userId);
     if (!sqlQuery.exec())
     {
@@ -843,6 +887,7 @@ void Sqlite::getOrderList(int userId, vector<int> &orderId, vector<double> &pric
             priceSum.push_back(sqlQuery.value(2).toDouble());
             time.push_back(sqlQuery.value(3).toLongLong());
             paid.push_back(sqlQuery.value(4).toBool());
+            canceled.push_back(sqlQuery.value(5).toBool());
         }
     }
 }

@@ -16,6 +16,9 @@
 
 #define LACKOFBALANCE 1
 #define LACKOFPRODUCT 2
+#define PAYORDERCANCELED 3
+#define ORDERPAID 1
+#define ORDERCANCELED 2
 
 class Sqlite
 {
@@ -43,9 +46,10 @@ public:
     void setDiscount(vector<vector<double>> discount) const;
     int buyOne(int userId, int productId);
     int generateOrder(int userId);
-    void getOrder(int orderId, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum);
+    void getOrder(int orderId, bool &canceled, bool &paied, long long &time, int &userId, vector<productItem *> &orderList, vector<int> &count, vector<double> &price, double &priceSum);
     int payOrder(int orderId);
-    void getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid);
+    int cancelOrder(int orderId);
+    void getOrderList(int userId, vector<int> &orderId, vector<double> &priceSum, vector<long long> &time, vector<bool> &paid, vector<bool> &canceled);
     // 关闭数据库
     void closeDb(void);
 
