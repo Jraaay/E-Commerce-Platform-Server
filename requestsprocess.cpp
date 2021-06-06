@@ -50,7 +50,7 @@ bool RequestsProcess::auth(string key, int userId, void *ui)
 void RequestsProcess::process(string jsonStr, void *father, void *ui)
 {
     qInstallMessageHandler(log::customMessageHandler);
-    string key;
+    string key = "";
     int type = -1;
     QJsonObject data;
     QJsonParseError jsonError;
