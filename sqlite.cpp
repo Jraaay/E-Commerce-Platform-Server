@@ -87,14 +87,14 @@ void Sqlite::createTable() const
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    createSql = QString("CREATE TABLE `order` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` INTEGER NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false, `canceled` BOOLEAN DEFAULT false);");
+    createSql = QString("CREATE TABLE `order` (`id` INTEGER PRIMARY KEY, `userId` INTEGER NOT NULL,`price` DOUBLE(32,2) NOT NULL, `time` INTEGER NOT NULL, `paied` BOOLEAN DEFAULT false, `canceled` BOOLEAN DEFAULT false);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
     if (!sqlQuery.exec())
     {
         qDebug() << "Error: Fail to create table. " << sqlQuery.lastError();
     }
-    createSql = QString("CREATE TABLE `orderItem` (`id` INTEGER PRIMARY KEY, `orderId` INTEGER NOT NULL,`productId` INTEGER NOT NULL, `price` BOOLEAN DEFAULT false, `number` INTEGER NOT NULL);");
+    createSql = QString("CREATE TABLE `orderItem` (`id` INTEGER PRIMARY KEY, `orderId` INTEGER NOT NULL,`productId` INTEGER NOT NULL, `price` DOUBLE(32,2) NOT NULL, `number` INTEGER NOT NULL);");
     sqlQuery.prepare(createSql);
     // 执行sql语句
     if (!sqlQuery.exec())
@@ -156,11 +156,11 @@ void Sqlite::modifyItemInCart(int productId, int userId, int number, bool checke
             }
             QSqlQuery sqlQuery2;
             sqlQuery2.prepare("UPDATE `cart` SET "
-                             "`userId`=:userId,"
-                             "`productId`=:productId,"
-                             "`number`=:number,"
-                             "`checked`=:checked "
-                             "WHERE `id`==:id;");
+                              "`userId`=:userId,"
+                              "`productId`=:productId,"
+                              "`number`=:number,"
+                              "`checked`=:checked "
+                              "WHERE `id`==:id;");
             sqlQuery2.bindValue(":userId", userId);
             sqlQuery2.bindValue(":productId", productId);
             sqlQuery2.bindValue(":number", number);
@@ -484,10 +484,9 @@ int Sqlite::generateOrder(int userId)
             {
                 if (checkedList[j] && numberList[j] > 0)
                 {
-                    productList[j]->remaining+=numberList[j];
+                    productList[j]->remaining += numberList[j];
 
                     modifyData(*productList[j], 0);
-
                 }
             }
             return -1;
@@ -499,10 +498,9 @@ int Sqlite::generateOrder(int userId)
             orderList.push_back(*productList[i]);
             count.push_back(numberList[i]);
             price.push_back(productList[i]->getPrice(discount));
-            productList[i]->remaining-=numberList[i];
+            productList[i]->remaining -= numberList[i];
 
             modifyData(*productList[i], 0);
-
         }
     }
     if (orderList.size() == 0)
@@ -545,7 +543,7 @@ int Sqlite::generateOrder(int userId)
 int Sqlite::buyOne(int userId, int productId)
 {
     int payStatus = -1;
-    vector<productItem *> productList = queryTable("","",productId);
+    vector<productItem *> productList = queryTable("", "", productId);
     vector<int> numberList;
     numberList.push_back(1);
     vector<bool> checkedList;
@@ -566,10 +564,9 @@ int Sqlite::buyOne(int userId, int productId)
             {
                 if (checkedList[i])
                 {
-                    productList[i]->remaining+=numberList[i];
+                    productList[i]->remaining += numberList[i];
 
                     modifyData(*productList[i], 0);
-
                 }
             }
             break;
@@ -581,10 +578,9 @@ int Sqlite::buyOne(int userId, int productId)
             orderList.push_back(*productList[i]);
             count.push_back(numberList[i]);
             price.push_back(productList[i]->getPrice(discount));
-            productList[i]->remaining-=numberList[i];
+            productList[i]->remaining -= numberList[i];
 
             modifyData(*productList[i], 0);
-
         }
     }
     int orderId;
@@ -811,7 +807,6 @@ int Sqlite::payOrder(int orderId)
 
             payStatus = 0;
         }
-
     }
     else
     {
@@ -831,7 +826,6 @@ int Sqlite::payOrder(int orderId)
     }
     return payStatus;
 }
-
 
 int Sqlite::cancelOrder(int orderId)
 {
@@ -891,27 +885,6 @@ void Sqlite::getOrderList(int userId, vector<int> &orderId, vector<double> &pric
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* 关闭数据库 */
 void Sqlite::closeDb(void)
